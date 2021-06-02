@@ -1,0 +1,263 @@
+
+
+```{r}
+library(plyr)
+library(dplyr)
+library(ggplot2)
+
+```
+
+Ejercicio  #1
+El data set utilizadao es  relacionado a modelos de autos = X y preciso = Y 
+
+1) Un arreglo con los valores de los estimadores para beta0 y beta1
+
+```{r}
+df = read.csv("car_prices.csv")
+
+#se toman solo  10,000 registros 
+df<-df[1:10,]
+
+#se obtiene solo las variables que se van a utilizar 
+ds<- df %>% select(model, sellingprice)
+
+
+#debido a que los nombre estan en minuscula y mayusculas 
+#se procede a actualizar todo a mayuscula
+ds<- ds %>% mutate(modelc = toupper(model) )
+
+
+#agrupo todos los modelos  ya en mayuscuala 
+agrupacion  <- ds %>% group_by(modelc) %>%
+  summarise(n())
+
+
+#Le agrego un codigo al modelo el carro  
+agrupacion<- agrupacion %>% mutate (Codigo = 1:n())
+
+#Se hacer inner join entre la agrupacion y el data set total  
+dfnew <- inner_join (ds, agrupacion,  by="modelc"  )
+
+#obtenego solo las columas  necesarias
+dsnew <- dfnew %>% select (Codigo,  sellingprice)
+
+
+n<-count(dsnew)
+
+totalN <- n$n
+totalN
+sumaX = sum(dsnew$Codigo)
+sumaY = sum(dsnew$sellingprice)
+
+mulSXY <- sumaX*sumaY
+
+
+
+#calcual pendiente
+a<- totalN*( sum(dsnew$Codigo*dsnew$sellingprice))
+b<- sumaX*sumaY
+c<-sum(dsnew$Codigo*dsnew$Codigo)
+c<- c*totalN
+d<- (sumaX*sumaX)
+
+Beta1 <-(a-b)/(c-d) #pendiente 
+Beta0<- (sumaY-(Beta1*sumaX))/totalN #intercepto
+
+print ("Beta 1" )
+print ( Beta1)
+
+print ("Beta 0")
+print (Beta0)
+
+
+
+
+```
+
+
+Ejercicio #2: 
+
+1. Realice un análisis estadístico sobre todas las variables del
+dataset, recuerde que pude usar la función summary().
+
+```{r}
+
+data = data.frame( read.csv("Admission_Predict.csv"))
+View(data)
+
+#nombre de variables 
+names(data)
+
+#Revisar los priemro registros  
+head(data)
+
+###Datos generales  
+resumen<-summary(data)
+resumen
+
+```
+
+2. Realice una gráfica de densidad para cada una de las variables
+numéricas en el dataset: GRE.Score, TOEFEL.Score, CGPA y Chance
+of Admit.
+
+```{r}
+
+
+library(plyr)
+library(dplyr)
+library(ggplot2)
+##Para los grafico de densidas se realiza un for
+
+#for (i in 2:5 )
+#{
+  #campo<-unlist(data[2])
+  
+  #if (i==2 || i==3......)
+  #{
+    #no se genera con for debido que la grafica no se imprime
+    data %>%
+      ggplot (aes (x= GRE.Score, y=..density..))+ 
+      geom_density (col='blue', lwd=1, fill ="cyan")+
+      theme_minimal()
+    
+    
+     data %>%
+      ggplot (aes (x= TOEFL.Score, y=..density..))+ 
+      geom_density (col='blue', lwd=1, fill ="cyan")+
+      theme_minimal()
+     
+     
+      data %>%
+      ggplot (aes (x= CGPA, y=..density..))+ 
+      geom_density (col='blue', lwd=1, fill ="cyan")+
+      theme_minimal()
+      
+      
+       data %>%
+      ggplot (aes (x= Chance.of.Admit, y=..density..))+ 
+      geom_density (col='blue', lwd=1, fill ="cyan")+
+      theme_minimal()
+  #}
+#} 
+
+```
+
+3. Realice una gráfica de correlación entre las variables del
+inciso anterior.
+
+
+```{r}
+
+#instalacion de libreria para graficas de correlaciones
+library(corrplot)
+pairs(data)
+
+dataV <-  data %>% select (GRE.Score,  TOEFL.Score, CGPA,Chance.of.Admit)
+
+Correlacion<-data.frame( round(cor(dataV), digits = 3))
+Correlacion
+
+##corelacion entre variables y variable  Chance of adminit
+Correlacion[4]
+corrplot(cor(dataV))
+
+
+
+```
+
+
+4. Realice comentarios sobre el análisis estadístico de las
+variables numéricas y la gráfica de correlación.
+
+---1. La correlacion variables selecciondas tiene una correlacion muy  alta  con relacion a la variable dependiente, 
+
+---2. podemos ver que toda la correlacion de las 3 varibales  es  posiva,  es decir entre mayor sea la nota obtenida mayor sera la probilidad de entrar a la universidad 
+
+---3. segun el analisis estadistico no hay variables  atipicas que esten muy alejadas de la media con respecto a los valors maximos y minimos 
+
+```{r}
+Correlacion[4]
+
+
+```
+
+
+
+5. Realice un scatter plot de todas las variables numéricas contra
+la variable Chance of Admit.
+
+Se realiza la grafica de las 3 variables que tiene mayor  correlcion.  
+
+```{r}
+
+attach(data)
+plot  (GRE.Score, Chance.of.Admit,  main="Score  vrs  Admint",
+       xlab="Score", ylab="Admit", pch=4,  col="#697831")
+
+plot  (TOEFL.Score, Chance.of.Admit, main ="Score TOEFL vrs Adminit",
+      xlab="TOEFL" , ylab="Admit", pch=4, col="#4AA5FB")  
+
+plot  (CGPA, Chance.of.Admit, main ="CGPA vrs Adminit",
+      xlab="CGPA" , ylab="Admit", pch=4, col="#60B95F")  
+
+
+```
+
+
+
+6. Realice un modelo de regresión lineal simple con cada variable
+numérica como X y la variable Chance of Admit como Y.
+
+
+```{r}
+
+#Modelos para  la variable  GRE.Score
+lregS =   lm( Chance.of.Admit~GRE.Score ,  data=data)
+summary(lregS)
+
+
+#moelo para la variable  Toefl
+lregT = lm (Chance.of.Admit~TOEFL.Score, data=data)
+summary(lregT)
+
+#modelo paa la variable  CGPA
+lrgC = lm(Chance.of.Admit~CGPA, data=data)
+summary(lrgC)
+
+```
+
+7. Realice una gráfica de cada modelo de regresión lineal en su
+scatter plot correspondiente.
+
+```{r}
+
+
+plot(GRE.Score, Chance.of.Admit, xlab ="Score", ylab="Admit", col="#0C4A8D" )
+abline(lregS, col="#25E839")
+
+
+plot (TOEFL.Score, Chance.of.Admit, xlab = "TOEFL", ylab ="Admit", col="#C85581" )
+abline(lregT, col="#25E839")
+
+plot  (CGPA, Chance.of.Admit, xlab = "CGPA", ylab="Admit", col="#C85952")
+abline(lrgC, col="#25E839")
+
+```
+
+
+Ejercicio #3: A continuación se le muestran tres imágenes que
+muestran los resultados obtenidos de correr la función summary() a
+dos modelos de regresión lineal, para este ejercicio se le solicita
+que realice la interpretación de las tablas resultantes. Recuerde
+tomar en cuenta la signficancia de los parámetros (signfícancia
+local), la signficancia del modelo (signficancia global), el valor
+del �#: y cualquier observación que considere relevante para
+determinar si el modelo estructuralmente es adecuado o no.
+
+
+
+1. la correlacion y determinacion de modelo 1 demustra que no hay mucha relacion entre las variables
+2. la correlacion y determinacion del modelo  2 demuestra que existe  una gran relacion dentro de las variables, considerando que habria un sobre ajuste al utilizarlo.  
+
+
